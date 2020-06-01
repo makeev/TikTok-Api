@@ -4,7 +4,7 @@ import random
 from pyppeteer_stealth import stealth
 
 class browser:
-    def __init__(self, url):
+    def __init__(self, url, executable_path=None):
         self.url = url
         self.userAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1"
         self.args = [
@@ -23,6 +23,8 @@ class browser:
             'ignoreHTTPSErrors': True,
             'userDataDir': "./tmp"
         }
+        if executable_path:
+            self.options['executablePath'] = executable_path
 
     async def start(self):
         self.browser = await pyppeteer.launch(self.options)
