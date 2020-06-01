@@ -24,8 +24,6 @@ class browser:
             'userDataDir': "./tmp"
         }
 
-        asyncio.get_event_loop().run_until_complete(self.start())
-
     async def start(self):
         self.browser = await pyppeteer.launch(self.options)
         self.page = await self.browser.newPage()
