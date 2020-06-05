@@ -18,7 +18,7 @@ class TikTokApi:
         if debug:
             print("Class initialized")
 
-        self.referrer = "https://www.tiktok.com/tag/jakefromstate?lang=en"
+        self.referrer = "https://www.tiktok.com/trending?lang="
         self.session = aiohttp_session
         self.executable_path = executable_path  # headless-chromium executable
 
@@ -28,14 +28,26 @@ class TikTokApi:
     #
     # Method that retrives data from the api
     #
-    async def getData(self, api_url, signature, userAgent):
+    async def getData(self, api_url, signature, userAgent, language='en'):
         url = api_url + \
             "&_signature=" + signature
         r = await self.session.get(url, headers={
             "method": "GET",
             "accept-encoding": "gzip, deflate, br",
-            "referrer": self.referrer,
+            "referrer": self.referrer + language,
             "user-agent": userAgent,
+            'accept': 'application/json, text/plain, */*',
+            'dnt': '1',
+            'cache-control': 'no-cache',
+            'scheme': 'https',
+            'authority': 'm.tiktok.com',
+            'origin': 'https://www.tiktok.com',
+            'pragma': 'no-cache',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site',
+            'path': url.split("tiktok.com")[1],
+            'accept-language': 'en-US,en;q=0.9'
         })
 
         try:
@@ -66,7 +78,7 @@ class TikTokApi:
     # Gets trending Tiktoks
     #
 
-    async def trending(self, count=30):
+    async def trending(self, count=30, language='en'):
         response = []
         maxCount = 99
         maxCursor = 0
@@ -77,11 +89,10 @@ class TikTokApi:
             else:
                 realCount = maxCount
 
-            api_url = "https://m.tiktok.com/api/item_list/?count={}&id=1&type=5&secUid=&maxCursor={}&minCursor=0&sourceType=12&appId=1233&verifyFp=".format(
-            str(realCount), str(maxCursor))
-            b = self.init_browser(api_url)
-            await b.start()
-            res = await self.getData(api_url, b.signature, b.userAgent)
+            api_url = "https://m.tiktok.com/api/item_list/?count={}&id=1&type=5&secUid=&maxCursor={}&minCursor=0&sourceType=12&appId=1233&region=US&language={}&verifyFp=".format(
+                str(realCount), str(maxCursor), str(language))
+            b = browser(api_url, language=language)
+            res = self.getData(api_url, b.signature, b.userAgent, language=language)
 
             for t in res['items']:
                 response.append(t)
@@ -99,7 +110,7 @@ class TikTokApi:
     #
     # Gets a specific user's tiktoks
     #
-    async def userPosts(self, userID, secUID, count=30):
+    async def userPosts(self, userID, secUID, count=30, language='en'):
         response = []
         maxCount = 99
         maxCursor = 0
@@ -110,8 +121,8 @@ class TikTokApi:
             else:
                 realCount = maxCount
 
-            api_url = "https://m.tiktok.com/api/item_list/?count={}&id={}&type=1&secUid={}&maxCursor={}&minCursor=0&sourceType=8&appId=1233&region=US&language=en&verifyFp=".format(
-            str(realCount), str(userID), str(secUID), str(maxCursor))
+            api_url = "https://m.tiktok.com/api/item_list/?count={}&id={}&type=1&secUid={}&maxCursor={}&minCursor=0&sourceType=8&appId=1233&region=US&language={}&verifyFp=".format(
+                str(realCount), str(userID), str(secUID), str(maxCursor), str(language))
             b = self.init_browser(api_url)
             await b.start()
             res = await self.getData(api_url, b.signature, b.userAgent)
@@ -143,7 +154,7 @@ class TikTokApi:
     # id - the sound ID
     #
 
-    async def bySound(self, id, count=30):
+    async def bySound(self, id, count=30, language='en'):
         response = []
         maxCount = 99
         maxCursor = 0
@@ -154,8 +165,8 @@ class TikTokApi:
             else:
                 realCount = maxCount
 
-            api_url = "https://m.tiktok.com/share/item/list?secUid=&id={}&type=4&count={}&minCursor=0&maxCursor={}&shareUid=&lang=en&verifyFp=".format(
-            str(id), str(realCount), str(maxCursor))
+            api_url = "https://m.tiktok.com/share/item/list?secUid=&id={}&type=4&count={}&minCursor=0&maxCursor={}&shareUid=&lang={}&verifyFp=".format(
+                str(id), str(realCount), str(maxCursor), str(language))
             b = self.init_browser(api_url)
             res = await self.getData(api_url, b.signature, b.userAgent)
 
@@ -174,9 +185,9 @@ class TikTokApi:
     #
     # Gets the music object
     #
-    async def getMusicObject(self, id):
-        api_url = "https://m.tiktok.com/api/music/detail/?musicId={}&language=en&verifyFp=".format(
-            str(id))
+    async def getMusicObject(self, id, language='en'):
+        api_url = "https://m.tiktok.com/api/music/detail/?musicId={}&language={}&verifyFp=".format(
+            str(id), language)
         b = self.init_browser(api_url)
         await b.start()
         return await self.getData(api_url, b.signature, b.userAgent)
@@ -185,7 +196,7 @@ class TikTokApi:
     # Gets tiktoks by hashtag
     #
 
-    async def byHashtag(self, hashtag, count=30):
+    async def byHashtag(self, hashtag, count=30, language='en'):
         id = self.getHashtagObject(hashtag)['challengeInfo']['challenge']['id']
         response = []
         maxCount = 99
@@ -197,8 +208,8 @@ class TikTokApi:
             else:
                 realCount = maxCount
 
-            api_url = "https://m.tiktok.com/share/item/list?secUid=&id={}&type=3&count={}&minCursor=0&maxCursor={}&shareUid=&lang=en&verifyFp=".format(
-                str(id), str(realCount), str(maxCursor))
+            api_url = "https://m.tiktok.com/share/item/list?secUid=&id={}&type=3&count={}&minCursor=0&maxCursor={}&shareUid=&lang={}&verifyFp=".format(
+                str(id), str(realCount), str(maxCursor), language)
             b = self.init_browser(api_url)
             res = await self.getData(api_url, b.signature, b.userAgent)
 
@@ -218,9 +229,9 @@ class TikTokApi:
     # Gets tiktoks by hashtag (for use in byHashtag)
     #
 
-    async def getHashtagObject(self, hashtag):
-        api_url = "https://m.tiktok.com/api/challenge/detail/?verifyFP=&challengeName={}&language=en".format(
-            str(hashtag))
+    async def getHashtagObject(self, hashtag, language='en'):
+        api_url = "https://m.tiktok.com/api/challenge/detail/?verifyFP=&challengeName={}&language={}".format(
+            str(hashtag), language)
         b = self.init_browser(api_url)
         await b.start()
         return await self.getData(api_url, b.signature, b.userAgent)
@@ -250,9 +261,9 @@ class TikTokApi:
     # Gets a user object for id and secUid
     #
 
-    async def getUserObject(self, username):
-        api_url = "https://m.tiktok.com/api/user/detail/?uniqueId={}&language=en&verifyFp=".format(
-            username)
+    async def getUserObject(self, username, language='en'):
+        api_url = "https://m.tiktok.com/api/user/detail/?uniqueId={}&language={}&verifyFp=".format(
+            username, language)
         b = self.init_browser(api_url)
         await b.start()
         data = await self.getData(api_url, b.signature, b.userAgent)
